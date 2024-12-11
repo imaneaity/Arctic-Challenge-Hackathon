@@ -1,0 +1,48 @@
+@prefix brick1: <https://brickschema.org/schema/1.1/Brick#> .
+@prefix ex: <http://example.org/building#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.org/building#Bureskolan_&_Bureå_Badhus> a brick1:Building ;
+    brick1:energyClass "C" ;
+    brick1:hasActivityType "Skola, sport" ;
+    brick1:hasAddress "Skärvägen 1, 932 52 Bureå" ;
+    brick1:hasFloorArea 9.394e+03 ;
+    brick1:hasPart <http://example.org/building#Bureskolan_&_Bureå_Badhus_EnergyUsage> ;
+    brick1:yearBuilt 1962 .
+
+ex:Falträsket_fsk a brick1:Building ;
+    brick1:energyClass "C" ;
+    brick1:hasActivityType "Förskola" ;
+    brick1:hasAddress "Falkträskvägen 41, 931 65 Skellefteå" ;
+    brick1:hasFloorArea 1.423e+03 ;
+    brick1:hasPart ex:Falträsket_fsk_EnergyUsage ;
+    brick1:yearBuilt 2020 .
+
+ex:Ostvikskolan a brick1:Building ;
+    brick1:energyClass "D" ;
+    brick1:hasActivityType "Skola" ;
+    brick1:hasAddress "Bygatan 56, 934 91 Kåge" ;
+    brick1:hasFloorArea 1.727e+03 ;
+    brick1:hasPart ex:Ostvikskolan_EnergyUsage ;
+    brick1:yearBuilt 1976 .
+
+<http://example.org/building#Räddningstjänst,_Boliden> a brick1:Building ;
+    brick1:energyClass "D" ;
+    brick1:hasActivityType "Räddningstjänst" ;
+    brick1:hasAddress "Yrkesgatan 3, 936 32 Boliden" ;
+    brick1:hasFloorArea 1.289e+03 ;
+    brick1:hasPart <http://example.org/building#Räddningstjänst,_Boliden_EnergyUsage> ;
+    brick1:yearBuilt 1946 .
+
+<http://example.org/building#Bureskolan_&_Bureå_Badhus_EnergyUsage> a brick1:Energy_Usage ;
+    brick1:totalEnergy 1.311189e+06 .
+
+ex:Falträsket_fsk_EnergyUsage a brick1:Energy_Usage ;
+    brick1:totalEnergy 1.26831e+05 .
+
+ex:Ostvikskolan_EnergyUsage a brick1:Energy_Usage ;
+    brick1:totalEnergy 2.32979e+05 .
+
+<http://example.org/building#Räddningstjänst,_Boliden_EnergyUsage> a brick1:Energy_Usage ;
+    brick1:totalEnergy 2.26854e+05 .
+

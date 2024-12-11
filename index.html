@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Energy API Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #0d6efd;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .container {
+            margin: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0d6efd;
+        }
+        #results, #predefinedResults {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        h2 {
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Building Energy API Dashboard</h1>
+    </header>
+    <div class="container">
+        <!-- Interactive Query Section -->
+        <h2>Interactive Query Console</h2>
+        <textarea id="queryInput" rows="5" placeholder="Enter your SPARQL query here"></textarea><br>
+        <button onclick="runQuery()">Run Query</button>
+        <div id="results">Results will appear here</div>
+
+        <!-- Predefined Queries Section -->
+        <h2>Predefined Queries</h2>
+        <button onclick="getBuildings()">Get All Buildings</button>
+        <button onclick="getEnergyUsage()">Total Energy Usage</button>
+        <button onclick="getActivityTypes()">Activity Types</button> 
+        <button onclick="getRecentBuildings()">Buildings Constructed After 2000</button>
+        <button onclick="getBuildingEnergy()">Get Energy for Specific Building</button>
+        <div id="predefinedResults">
+            <div id="specificBuildingTable"></div>
+            <div id="recentBuildingsTable"></div>
+            <div id="activityTable"></div>
+            <div id="buildingsTable"></div>
+            <div id="usageTable"></div>
+            <canvas id="buildingsChart" width="400" height="200" style="margin-top: 20px;"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Base URL of the API
+        const apiUrl = "http://127.0.0.1:5000";
+
+        // Function to run custom SPARQL query
+        function runQuery() {
+            const query = document.getElementById("queryInput").value;
+            fetch(`${apiUrl}/query`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: query }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("results").innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                document.getElementById("results").innerText = "Error: " + error;
+            });
+        }
+
+        function renderSpecificBuildingTable(data) {
+            let table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Building</th>
+                            <th>Total Energy (kWh)</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            data.forEach(item => {
+                const buildingName = item.building; // Get building name directly
+                const totalEnergy = item.totalEnergy; // Get total energy value
+                table += `
+                    <tr>
+                        <td>${buildingName}</td>
+                        <td>${totalEnergy}</td>
+                    </tr>`;
+            });
+
+            table += `</tbody></table>`;
+
+            const specificBuildingTableElement = document.getElementById("specificBuildingTable");
+            if (specificBuildingTableElement) {
+                specificBuildingTableElement.innerHTML = table;
+            } else {
+                console.error("Element with ID 'specificBuildingTable' not found.");
+            }
+        }
+
+        function getBuildingEnergy() {
+            const buildingName = prompt("Enter the building name (e.g., Bureskolan_&_Bureå_Badhus):");
+            if (!buildingName) {
+                alert("Building name is required!");
+                return;
+            }
+            
+            fetch(`${apiUrl}/building_energy?building=${encodeURIComponent(buildingName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    renderSpecificBuildingTable(data);
+                })
+                .catch(error => {
+                    document.getElementById("predefinedResults").innerText = "Error: " + error;
+                });
+        }
+
+        function getBuildings() {
+            fetch(`${apiUrl}/buildings`)
+                .then(response => response.json())
+                .then(data => {
+                    renderBuildingsTable(data);
+                })
+                .catch(error => {
+                    document.getElementById("predefinedResults").innerText = "Error: " + error;
+                });
+        }
+
+        function renderBuildingsTable(data) {
+            let table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Building</th>
+                            <th>Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            data.forEach(item => {
+                const buildingName = item.building.split('#')[1];
+                const buildingAddress = item.address.split('#')[0];
+                table += `
+                    <tr>
+                        <td>${buildingName}</td>
+                        <td>${buildingAddress}</td>
+                    </tr>`;
+            });
+
+            table += `</tbody></table>`;
+
+            const buildingsTableElement = document.getElementById("buildingsTable");
+            if (buildingsTableElement) {
+                buildingsTableElement.innerHTML = table;
+            } else {
+                console.error("Element with ID 'buildingsTable' not found.");
+            }
+        }
+
+        function getEnergyUsage() {
+            fetch(`${apiUrl}/energy_usage`)
+                .then(response => response.json())
+                .then(data => {
+                    renderEnergyUsageTable(data);
+                })
+                .catch(error => {
+                    document.getElementById("predefinedResults").innerText = "Error: " + error;
+                });
+        }
+
+        function renderEnergyUsageTable(data) {
+            let table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Building</th>
+                            <th>Total Energy</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            data.forEach(item => {
+                const buildingName = item.building.split('#')[1];
+                const buildingEnergy = item.totalEnergy;
+                table += `
+                    <tr>
+                        <td>${buildingName}</td>
+                        <td>${buildingEnergy}</td>
+                    </tr>`;
+            });
+
+            table += `</tbody></table>`;
+
+            const usageTableElement = document.getElementById("usageTable");
+            if (usageTableElement) {
+                usageTableElement.innerHTML = table;
+            } else {
+                console.error("Element with ID 'usageTable' not found.");
+            }
+        }
+
+        function getActivityTypes() {
+            fetch(`${apiUrl}/activity_types`)
+                .then(response => response.json())
+                .then(data => {
+                    renderActivityTypesTable(data);
+                })
+                .catch(error => {
+                    document.getElementById("predefinedResults").innerText = "Error: " + error;
+                });
+        }
+
+        function renderActivityTypesTable(data) {
+            let table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Building</th>
+                            <th>Activity Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            data.forEach(item => {
+                const buildingName = item.building.split('#')[1];
+                const activityType = item.activityType;
+                table += `
+                    <tr>
+                        <td>${buildingName}</td>
+                        <td>${activityType}</td>
+                    </tr>`;
+            });
+
+            table += `</tbody></table>`;
+
+            const activityTableElement = document.getElementById("activityTable");
+            if (activityTableElement) {
+                activityTableElement.innerHTML = table;
+            } else {
+                console.error("Element with ID 'activityTable' not found.");
+            }
+        }
+
+        function getRecentBuildings() {
+            const year = prompt("Enter the year (e.g., 2000):");
+            if (!year) {
+                alert("Year is required!");
+                return;
+            }
+
+            fetch(`${apiUrl}/recent_buildings?year=${year}`)
+                .then(response => response.json())
+                .then(data => {
+                    renderRecentBuildingsTable(data);
+                })
+                .catch(error => {
+                    document.getElementById("predefinedResults").innerText = "Error: " + error;
+                });
+        }
+
+        function renderRecentBuildingsTable(data) {
+            let table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Building</th>
+                            <th>Year Built</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            data.forEach(item => {
+                const buildingName = item.building.split('#')[1]; // Extract building name
+                const yearBuilt = item.yearBuilt; // Get yearBuilt value
+                table += `
+                    <tr>
+                        <td>${buildingName}</td>
+                        <td>${yearBuilt}</td>
+                    </tr>`;
+            });
+
+            table += `</tbody></table>`;
+
+            const recentBuildingsTableElement = document.getElementById("recentBuildingsTable");
+            if (recentBuildingsTableElement) {
+                recentBuildingsTableElement.innerHTML = table;
+            } else {
+                console.error("Element with ID 'recentBuildingsTable' not found.");
+            }
+        }
+    </script>
+</body>
+</html>
